@@ -14,6 +14,7 @@ const Tab = createBottomTabNavigator();
 const TabNavigator = () => {
   return (
     <Tab.Navigator
+      initialRouteName="CreateInvoice"
       screenOptions={{
         tabBarActiveTintColor: '#007AFF',
         tabBarInactiveTintColor: 'gray',
@@ -44,7 +45,7 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Create Invoice"
+        name="CreateInvoice"
         component={CreateInvoiceScreen}
         options={{
           tabBarIcon: ({ color, size }) => (

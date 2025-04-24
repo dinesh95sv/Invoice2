@@ -1,6 +1,7 @@
 // src/screens/factories/AddFactoryScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
 import { database } from '../../database';
 import FactoryForm from '../../components/FactoryForm';
 import Button from '../../components/common/Button';
@@ -9,67 +10,31 @@ import { colors } from '../../styles/colors';
 const AddFactoryScreen = ({ route, navigation }) => {
   const editingFactory = route.params?.factory;
   const isEditing = !!editingFactory;
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    location: '',
-    contactInfo: '',
-    description: '',
-  });
-  
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (isEditing) {
-      // Pre-fill the form with existing factory data
-      setFormData({
-        name: editingFactory.name,
-        location: editingFactory.location,
-        contactInfo: editingFactory.contactInfo,
-        description: editingFactory.description || '',
-      });
-    }
-  }, [editingFactory]);
+  const onCancelChange = () => {
+    navigation.goBack();
+  }
 
-  const handleFormChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSubmit = async () => {
-    // Basic validation
-    if (!formData.name.trim()) {
-      Alert.alert('Error', 'Factory name is required');
-      return;
-    }
-    
-    if (!formData.location.trim()) {
-      Alert.alert('Error', 'Factory location is required');
-      return;
-    }
-
+  const handleSubmit = async (factoryData) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
       await database.write(async () => {
         if (isEditing) {
           // Update existing factory
           await editingFactory.update((factory) => {
-            factory.name = formData.name;
-            factory.location = formData.location;
-            factory.contactInfo = formData.contactInfo;
-            factory.description = formData.description;
+            factory.name = factoryData.name;
+            factory.gstin = factoryData.gstin;
+            factory.phone = factoryData.phone;
+            factory.address = factoryData.address;
           });
         } else {
           // Create new factory
-          const factoriesCollection = database.get('factories');
-          await factoriesCollection.create((factory) => {
-            factory.name = formData.name;
-            factory.location = formData.location;
-            factory.contactInfo = formData.contactInfo;
-            factory.description = formData.description;
+          await database.get('factories').create((factory) => {
+            factory.name = factoryData.name;
+            factory.gstin = factoryData.gstin;
+            factory.phone = factoryData.phone;
+            factory.address = factoryData.address;
           });
         }
       });
@@ -92,22 +57,11 @@ const AddFactoryScreen = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.formContainer}>
         <FactoryForm
-          formData={formData}
-          onChange={handleFormChange}
-        />
-        
-        <Button
-          title={isEditing ? 'Update Factory' : 'Add Factory'}
-          onPress={handleSubmit}
-          loading={loading}
-          style={styles.submitButton}
-        />
-        
-        <Button
-          title="Cancel"
-          onPress={() => navigation.goBack()}
-          type="outline"
-          style={styles.cancelButton}
+          factory={isEditing ? editingFactory : null}
+          mode={isEditing ? "edit" : "create"}
+          onSave={(factoryData) => handleSubmit(factoryData)}
+          onCancel={onCancelChange}
+          isSubmitting={loading}
         />
       </View>
     </ScrollView>
@@ -131,4 +85,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddFactoryScreen;
+export default withDatabase(AddFactoryScreen);

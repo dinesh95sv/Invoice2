@@ -70,8 +70,9 @@ const FactoryListScreen = ({ navigation }) => {
       <TouchableOpacity onPress={() => handleFactoryPress(item)}>
         <Card style={styles.factoryCard}>
           <Text style={styles.factoryName}>{item.name}</Text>
-          <Text style={styles.factoryDetail}>{item.location}</Text>
-          <Text style={styles.factoryDetail}>{item.contactInfo}</Text>
+          <Text style={styles.factoryDetail}>{item.gstin}</Text>
+          <Text style={styles.factoryDetail}>{item.address}</Text>
+          <Text style={styles.factoryDetail}>{item.phone}</Text>
         </Card>
       </TouchableOpacity>
     </SwipeableRow>

@@ -120,18 +120,24 @@ const CustomerListScreen = () => {
             <View style={styles.customerContent}>
               <View style={styles.customerInfo}>
                 <Text style={styles.customerName}>{item.name}</Text>
-                <Text style={styles.customerEmail}>{item.email || 'No email'}</Text>
+                <Text style={styles.customerDetail}>{item.gstin}</Text>
                 {item.phone ? (
-                  <Text style={styles.customerPhone}>{formatPhoneNumber(item.phone)}</Text>
+                  <Text style={styles.customerDetail}>{formatPhoneNumber(item.phone)}</Text>
+                ) : null}
+                {item.email ? (
+                  <Text style={styles.customerDetail}>{item.email}</Text>
+                ) : null}
+                {item.address ? (
+                  <Text style={styles.customerDetail}>{item.address}</Text>
                 ) : null}
               </View>
-              <View style={styles.customerActions}>
+              {/* <View style={styles.customerActions}>
                 <Ionicons
                   name="chevron-forward"
                   size={24}
                   color={colors.gray400}
                 />
-              </View>
+              </View> */}
             </View>
           </Card>
         </TouchableOpacity>
@@ -182,6 +188,63 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     padding: spacing.medium,
+  },
+  listContent: {
+    padding: spacing.medium,
+    paddingBottom: spacing.xxlarge, // Extra padding for FAB
+  },
+  customerCard: {
+    marginBottom: spacing.medium,
+  },
+  customerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  customerInfo: {
+    flex: 1,
+    marginRight: spacing.medium,
+  },
+  customerName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: spacing.tiny,
+  },
+  customerDetail: {
+    ...fonts.style.body2,
+    color: colors.textLight,
+  },
+  emptyText: {
+    ...fonts.style.heading3,
+    color: colors.textDark,
+    marginTop: spacing.medium,
+  },
+  emptySubtext: {
+    ...fonts.style.body2,
+    color: colors.textLight,
+    marginTop: spacing.small,
+    marginBottom: spacing.large,
+    textAlign: 'center',
+  },
+  emptyButton: {
+    minWidth: 150,
+  },
+  addButton: {
+    position: 'absolute',
+    right: spacing.large,
+    bottom: spacing.large,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: colors.black,
+    shadowOffset: spacing.shadowOffset,
+    shadowOpacity: 0.3,
+    shadowRadius: spacing.shadowRadius,
   },
 });
 

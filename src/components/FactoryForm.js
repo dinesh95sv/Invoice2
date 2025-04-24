@@ -2,23 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { database } from '../database';
 
-const FactoryForm = ({ factory, onSave, onCancel }) => {
+const FactoryForm = ({ factory, mode, onSave, onCancel, isSubmitting }) => {
   const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
-  const [contactPerson, setContactPerson] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [gstin, setGstin] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
     if (factory) {
       setName(factory.name || '');
-      setLocation(factory.location || '');
-      setContactPerson(factory.contactPerson || '');
-      setContactPhone(factory.contactPhone || '');
-      setEmail(factory.email || '');
-      setGstin(factory.gstin || '');
+      setLocation(factory.gstin || '');
+      setLocation(factory.email || '');
+      setContactPerson(factory.phone || '');
+      setContactPhone(factory.address || '');
     }
   }, [factory]);
 
@@ -27,9 +24,14 @@ const FactoryForm = ({ factory, onSave, onCancel }) => {
       Alert.alert('Validation Error', 'Factory name is required');
       return false;
     }
+
+    if (!phone.trim()) {
+      Alert.alert('Validation Error', 'Factory Phone No. is required');
+      return false;
+    }
     
-    if (!location.trim()) {
-      Alert.alert('Validation Error', 'Factory location is required');
+    if (!gstin.trim()) {
+      Alert.alert('Validation Error', 'Factory GSTIN is required');
       return false;
     }
     
@@ -41,40 +43,17 @@ const FactoryForm = ({ factory, onSave, onCancel }) => {
     return true;
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    try {
-      await database.write(async () => {
-        if (factory) {
-          await factory.update(record => {
-            record.name = name;
-            record.location = location;
-            record.contactPerson = contactPerson;
-            record.contactPhone = contactPhone;
-            record.email = email;
-            record.gstin = gstin;
-          });
-        } else {
-          await database.collections.get('factories').create(record => {
-            record.name = name;
-            record.location = location;
-            record.contactPerson = contactPerson;
-            record.contactPhone = contactPhone;
-            record.email = email;
-            record.gstin = gstin;
-          });
-        }
-      });
-      
-      onSave && onSave();
-    } catch (error) {
-      console.error('Error saving factory:', error);
-      Alert.alert('Error', 'Failed to save factory information');
-    } finally {
-      setIsLoading(false);
-    }
+    const factoryData = factory ? factory : {};
+    factoryData.name = name;
+    factoryData.gstin = gstin;
+    factoryData.email = email;
+    factoryData.phone = phone;
+    factoryData.address = address;
+    
+    onSave && onSave(factoryData);
   };
 
   return (
@@ -93,34 +72,21 @@ const FactoryForm = ({ factory, onSave, onCancel }) => {
       </View>
       
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Location *</Text>
+        <Text style={styles.label}>GSTIN *</Text>
         <TextInput
-          style={[styles.input, styles.textArea]}
-          value={location}
-          onChangeText={setLocation}
-          placeholder="Factory address"
-          multiline
-          numberOfLines={3}
+          style={styles.input}
+          value={gstin}
+          onChangeText={(text) => setGstin(text.toUpperCase())}
+          placeholder="Factory GSTIN"
         />
       </View>
       
       <View style={styles.formGroup}>
-        <Text style={styles.label}>Contact Person</Text>
+        <Text style={styles.label}>Phone</Text>
         <TextInput
           style={styles.input}
-          value={contactPerson}
-          onChangeText={setContactPerson}
-          placeholder="Name of contact person"
-          autoCapitalize="words"
-        />
-      </View>
-      
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Contact Phone</Text>
-        <TextInput
-          style={styles.input}
-          value={contactPhone}
-          onChangeText={setContactPhone}
+          value={phone}
+          onChangeText={setPhone}
           placeholder="Phone number"
           keyboardType="phone-pad"
         />
@@ -137,15 +103,16 @@ const FactoryForm = ({ factory, onSave, onCancel }) => {
           autoCapitalize="none"
         />
       </View>
-      
+
       <View style={styles.formGroup}>
-        <Text style={styles.label}>GSTIN</Text>
+        <Text style={styles.label}>Address</Text>
         <TextInput
-          style={styles.input}
-          value={gstin}
-          onChangeText={setGstin}
-          placeholder="GSTIN number"
-          autoCapitalize="characters"
+          style={[styles.input, styles.textArea]}
+          value={address}
+          onChangeText={setAddress}
+          placeholder="Factory address"
+          multiline
+          numberOfLines={3}
         />
       </View>
       
@@ -153,17 +120,17 @@ const FactoryForm = ({ factory, onSave, onCancel }) => {
         <TouchableOpacity 
           style={[styles.button, styles.cancelButton]} 
           onPress={onCancel}
-          disabled={isLoading}
+          disabled={isSubmitting}
         >
           <Text style={styles.buttonText}>Cancel</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.button, styles.saveButton, isLoading && styles.disabledButton]} 
+          style={[styles.button, styles.saveButton, isSubmitting && styles.disabledButton]} 
           onPress={handleSave}
-          disabled={isLoading}
+          disabled={isSubmitting}
         >
-          <Text style={styles.buttonText}>{isLoading ? 'Saving...' : 'Save'}</Text>
+          <Text style={styles.buttonText}>{isSubmitting ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -11,58 +11,54 @@ import { validateEmail, validatePhone } from '../../utils/validators';
 
 const AddCustomerScreen = ({ navigation }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formValues, setFormValues] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    zipCode: '',
-    country: '',
-    notes: '',
-  });
+  // const [formValues, setFormValues] = useState({
+  //   name: '',
+  //   gstin: '',
+  //   phone: '',
+  //   email: '',
+  //   address: '',
+  // });
 
-  const handleValueChange = (field, value) => {
-    setFormValues({
-      ...formValues,
-      [field]: value,
-    });
-  };
+  // const handleValueChange = (field, value) => {
+  //   setFormValues({
+  //     ...formValues,
+  //     [field]: value,
+  //   });
+  // };
 
-  const validateForm = () => {
-    if (!formValues.name.trim()) {
-      Alert.alert('Validation Error', 'Customer name is required');
-      return false;
-    }
+  const onCancelChange = () => {
+    navigation.goBack();
+  }
 
-    if (formValues.email && !validateEmail(formValues.email)) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
-      return false;
-    }
+  // const validateForm = () => {
+  //   if (!formValues.name.trim()) {
+  //     Alert.alert('Validation Error', 'Customer name is required');
+  //     return false;
+  //   }
 
-    if (formValues.phone && !validatePhone(formValues.phone)) {
-      Alert.alert('Validation Error', 'Please enter a valid phone number');
-      return false;
-    }
+  //   if (formValues.email && !validateEmail(formValues.email)) {
+  //     Alert.alert('Validation Error', 'Please enter a valid email address');
+  //     return false;
+  //   }
 
-    return true;
-  };
+  //   if (formValues.phone && !validatePhone(formValues.phone)) {
+  //     Alert.alert('Validation Error', 'Please enter a valid phone number');
+  //     return false;
+  //   }
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+  //   return true;
+  // };
 
+  const handleSubmit = async (customerData) => {
     setIsSubmitting(true);
     try {
       await database.write(async () => {
         await database.get('customers').create(customer => {
-          customer.name = formValues.name;
-          customer.email = formValues.email;
-          customer.phone = formValues.phone;
-          customer.address = formValues.address;
-          customer.city = formValues.city;
-          customer.zipCode = formValues.zipCode;
-          customer.country = formValues.country;
-          customer.notes = formValues.notes;
+          customer.name = customerData.name;
+          customergstin = customerData.gstin;
+          customer.phone = customerData.phone;
+          customer.email = customerData.email;
+          customer.address = customerData.address;
         });
       });
       
@@ -84,17 +80,11 @@ const AddCustomerScreen = ({ navigation }) => {
       
       <View style={styles.formContainer}>
         <CustomerForm 
-          values={formValues}
-          onValueChange={handleValueChange}
-        />
-      </View>
-      
-      <View style={styles.buttonContainer}>
-        <Button 
-          title="Save Customer" 
-          onPress={handleSubmit} 
-          loading={isSubmitting}
-          disabled={isSubmitting}
+          customer={null}
+          mode="create"
+          onSave={(customerData) => handleSubmit(customerData)}
+          onCancel={onCancelChange}
+          isSubmitting={isSubmitting}
         />
       </View>
     </ScrollView>
@@ -118,10 +108,6 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: spacing.medium,
-  },
-  buttonContainer: {
-    padding: spacing.medium,
-    marginTop: spacing.small,
   },
 });
 

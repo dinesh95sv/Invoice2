@@ -1,6 +1,9 @@
 // src/screens/factories/FactoryDetailScreen.js
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { withDatabase } from '@nozbe/watermelondb/DatabaseProvider';
+import withObservables from '@nozbe/with-observables';
+import { Q } from '@nozbe/watermelondb';
 import { database } from '../../database';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -8,35 +11,7 @@ import Text from '../../components/common/Text';
 import List from '../../components/common/List';
 import { colors } from '../../styles/colors';
 
-const FactoryDetailScreen = ({ route, navigation }) => {
-  const { factoryId } = route.params;
-  const [factory, setFactory] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadFactoryDetails();
-  }, [factoryId]);
-
-  const loadFactoryDetails = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch factory details
-      const factoryCollection = database.get('factories');
-      const factoryRecord = await factoryCollection.find(factoryId);
-      setFactory(factoryRecord);
-      
-      // Fetch products associated with this factory
-      const factoryProducts = await factoryRecord.products.fetch();
-      setProducts(factoryProducts);
-    } catch (error) {
-      console.error('Failed to load factory details:', error);
-      Alert.alert('Error', 'Could not load factory details');
-    } finally {
-      setLoading(false);
-    }
-  };
+const FactoryDetailScreen = ({ navigation, route, factory, products }) => {
 
   const handleEditFactory = () => {
     navigation.navigate('AddFactory', { factory });
@@ -83,16 +58,23 @@ const FactoryDetailScreen = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       <Card style={styles.factoryDetails}>
         <Text style={styles.factoryName}>{factory.name}</Text>
-        <Text style={styles.sectionTitle}>Location</Text>
-        <Text style={styles.detailText}>{factory.location}</Text>
+
+        <Text style={styles.sectionTitle}>GSTIN</Text>
+        <Text style={styles.detailText}>{factory.gstin}</Text>
         
-        <Text style={styles.sectionTitle}>Contact Information</Text>
-        <Text style={styles.detailText}>{factory.contactInfo}</Text>
+        <Text style={styles.sectionTitle}>Phone</Text>
+        <Text style={styles.detailText}>{factory.phone}</Text>
         
-        {factory.description && (
+        {factory.email && (
           <>
-            <Text style={styles.sectionTitle}>Description</Text>
-            <Text style={styles.detailText}>{factory.description}</Text>
+            <Text style={styles.sectionTitle}>Email</Text>
+            <Text style={styles.detailText}>{factory.email}</Text>
+          </>
+        )}
+        {factory.address && (
+          <>
+            <Text style={styles.sectionTitle}>Address</Text>
+            <Text style={styles.detailText}>{factory.address}</Text>
           </>
         )}
       </Card>
@@ -106,7 +88,7 @@ const FactoryDetailScreen = ({ route, navigation }) => {
             renderItem={({ item }) => (
               <List.Item
                 title={item.name}
-                subtitle={`$${item.price}`}
+                subtitle={`${item.price}`}
                 onPress={() => handleProductPress(item)}
               />
             )}
@@ -191,4 +173,19 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FactoryDetailScreen;
+// Enhance the component with WatermelonDB observations
+const enhancedComponent = withObservables(['route'], ({ route, database }) => {
+  const factoryId = route.params?.factoryId;
+  
+  return {
+    factory: database.collections
+      .get('factories')
+      .findAndObserve(factoryId),
+    products: database.collections
+      .get('products')
+      .query(Q.where('factory_id', factoryId))
+      .observe(),
+  };
+});
+
+export default withDatabase(enhancedComponent(FactoryDetailScreen));

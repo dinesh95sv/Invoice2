@@ -72,11 +72,11 @@ const AppNavigator = () => {
         component={InvoiceDetailScreen} 
         options={{ headerShown: true, title: 'Invoice Details' }}
       />
-      <Stack.Screen 
+      {/* <Stack.Screen 
         name="CreateInvoice" 
         component={CreateInvoiceScreen} 
         options={{ headerShown: true, title: 'Create Invoice' }}
-      />
+      /> */}
     </Stack.Navigator>
   );
 };

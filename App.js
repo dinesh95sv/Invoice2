@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 
 // Database
-import { Database } from '@watermelondb/Database';
+// import { Database } from '@watermelondb/Database';
 import { DatabaseProvider } from '@watermelondb/react';
 import database from './src/database';
 

@@ -18,26 +18,20 @@ const CustomerDetailScreen = ({ navigation, route, customer, invoices }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [formValues, setFormValues] = useState({
     name: '',
-    email: '',
     phone: '',
+    gstin: '',
+    email: '',
     address: '',
-    city: '',
-    zipCode: '',
-    country: '',
-    notes: '',
   });
 
   useEffect(() => {
     if (customer) {
       setFormValues({
         name: customer.name,
+        gstin: customer.gstin,
         email: customer.email || '',
         phone: customer.phone || '',
         address: customer.address || '',
-        city: customer.city || '',
-        zipCode: customer.zipCode || '',
-        country: customer.country || '',
-        notes: customer.notes || '',
       });
     }
   }, [customer]);
@@ -56,47 +50,36 @@ const CustomerDetailScreen = ({ navigation, route, customer, invoices }) => {
     });
   }, [navigation, customer, isEditing]);
 
-  const handleValueChange = (field, value) => {
-    setFormValues({
-      ...formValues,
-      [field]: value,
-    });
-  };
 
-  const validateForm = () => {
-    if (!formValues.name.trim()) {
-      Alert.alert('Validation Error', 'Customer name is required');
-      return false;
-    }
+  // const validateForm = () => {
+  //   if (!formValues.name.trim()) {
+  //     Alert.alert('Validation Error', 'Customer name is required');
+  //     return false;
+  //   }
 
-    if (formValues.email && !validateEmail(formValues.email)) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
-      return false;
-    }
+  //   if (formValues.email && !validateEmail(formValues.email)) {
+  //     Alert.alert('Validation Error', 'Please enter a valid email address');
+  //     return false;
+  //   }
 
-    if (formValues.phone && !validatePhone(formValues.phone)) {
-      Alert.alert('Validation Error', 'Please enter a valid phone number');
-      return false;
-    }
+  //   if (formValues.phone && !validatePhone(formValues.phone)) {
+  //     Alert.alert('Validation Error', 'Please enter a valid phone number');
+  //     return false;
+  //   }
 
-    return true;
-  };
+  //   return true;
+  // };
 
-  const handleSave = async () => {
-    if (!validateForm()) return;
-
+  const handleSave = async (customerData) => {
     setIsSaving(true);
     try {
       await database.write(async () => {
         await customer.update(cust => {
-          cust.name = formValues.name;
-          cust.email = formValues.email;
-          cust.phone = formValues.phone;
-          cust.address = formValues.address;
-          cust.city = formValues.city;
-          cust.zipCode = formValues.zipCode;
-          cust.country = formValues.country;
-          cust.notes = formValues.notes;
+          cust.name = customerData.name;
+          cust.phone = customerData.phone;
+          cust.gstin = customerData.gstin;
+          cust.email = customerData.email;
+          cust.address = customerData.address;
         });
       });
       
@@ -172,17 +155,12 @@ const CustomerDetailScreen = ({ navigation, route, customer, invoices }) => {
       {isEditing ? (
         <View style={styles.formContainer}>
           <CustomerForm 
-            values={formValues}
-            onValueChange={handleValueChange}
+            customer={customer}
+            mode="edit"
+            onSave={(customerData) => handleSave(customerData)}
+            onCancel={() => setIsSaving(false)}
+            isSubmitting={isSaving}
           />
-          <View style={styles.buttonContainer}>
-            <Button 
-              title="Save Changes" 
-              onPress={handleSave}
-              loading={isSaving}
-              disabled={isSaving}
-            />
-          </View>
         </View>
       ) : (
         <>

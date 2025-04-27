@@ -170,7 +170,7 @@ const InvoiceForm = ({
           items: formData.items,
         });
       } catch (error) {
-        console.error('Error sharing invoice:', error);
+        console.error('Error Preview invoice:', error);
         Alert.alert('Error', 'Could not share invoice');
       } finally {
         setGeneratingPdf(false);

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { database } from '../../database';
-import { Q } from '@nozbe/watermelondb';
+// import { Q } from '@nozbe/watermelondb';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import SwipeableRow from '../../components/common/SwipeableRow';

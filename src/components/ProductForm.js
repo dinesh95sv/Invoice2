@@ -2,14 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { database } from '../database';
 
-const ProductForm = ({ product, onSave, onCancel }) => {
+const ProductForm = ({ product, onSave, onCancel, factories }) => {
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [stockQuantity, setStockQuantity] = useState('');
-  const [category, setCategory] = useState('');
+  const [factorySearch, setFactorySearch] = useState('');
+  const [showFactoryDropdown, setShowFactoryDropdown] = useState(false);
+  const [factory, setFactory] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const getFactoryInfo = (factoryId) => {
+    const factory = factories.find(factory => factory.id === factoryId);
+    setFactory(factory);
+  }
 
   useEffect(() => {
     if (product) {
@@ -17,11 +23,18 @@ const ProductForm = ({ product, onSave, onCancel }) => {
       setSku(product.sku || '');
       setDescription(product.description || '');
       setPrice(product.price ? product.price.toString() : '');
-      setStockQuantity(product.stockQuantity ? product.stockQuantity.toString() : '');
-      setCategory(product.category || '');
+      getFactoryInfo(product.factoryId);
     }
+    
   }, [product]);
 
+  useEffect(() => {
+
+  }, [factorySearch])
+
+  const filteredFactories = factories.filter(factory => 
+    factory.name.toLowerCase().includes(factorySearch.toLowerCase())
+  );
   const validateForm = () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Product name is required');
@@ -33,49 +46,37 @@ const ProductForm = ({ product, onSave, onCancel }) => {
       return false;
     }
     
-    if (stockQuantity.trim() && (isNaN(parseInt(stockQuantity)) || parseInt(stockQuantity) < 0)) {
-      Alert.alert('Validation Error', 'Stock quantity must be a positive number');
-      return false;
-    }
-    
     return true;
   };
 
   const handleSave = async () => {
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    try {
-      await database.write(async () => {
-        if (product) {
-          await product.update(record => {
-            record.name = name;
-            record.sku = sku;
-            record.description = description;
-            record.price = parseFloat(price);
-            record.stockQuantity = stockQuantity ? parseInt(stockQuantity) : 0;
-            record.category = category;
-          });
-        } else {
-          await database.collections.get('products').create(record => {
-            record.name = name;
-            record.sku = sku;
-            record.description = description;
-            record.price = parseFloat(price);
-            record.stockQuantity = stockQuantity ? parseInt(stockQuantity) : 0;
-            record.category = category;
-          });
-        }
-      });
-      
-      onSave && onSave();
-    } catch (error) {
-      console.error('Error saving product:', error);
-      Alert.alert('Error', 'Failed to save product');
-    } finally {
-      setIsLoading(false);
+    const data = {
+      name: name,
+      sku: sku,
+      description: description,
+      price: price,
+      factoryId: factory.id,
     }
+    onSave & onSave(data)
   };
+
+  const selectFactory = (factory) => {
+    setFactory(factory);
+    setShowFactoryDropdown(false);
+    setFactorySearch('');
+  };
+
+  const renderFactoryItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.dropdownItem} 
+      onPress={() => selectFactory(item)}
+    >
+      <Text style={styles.dropdownItemText}>{item.name}</Text>
+      {item.gstin && <Text style={styles.dropdownItemSubtext}>{item.gstin}</Text>}
+    </TouchableOpacity>
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -100,6 +101,32 @@ const ProductForm = ({ product, onSave, onCancel }) => {
           placeholder="Stock Keeping Unit"
         />
       </View>
+
+      <View style={styles.formGroup}>
+        <View style={styles.dropdownContainer}>
+          <Input
+            label="Factory"
+            value={factory ? factory.name : ''}
+            onChangeText={setFactorySearch}
+            placeholder="Search Factory"
+            onFocus={() => setShowFactoryDropdown(true)}
+            editable={!selectedCustomer}
+          />
+          
+          {showFactoryDropdown && (
+            <Card style={styles.dropdown}>
+              <FlatList
+                data={filteredFactories}
+                renderItem={renderFactoryItem}
+                keyExtractor={item => item.id}
+                ListEmptyComponent={
+                  <Text style={styles.emptyListText}>No Factory found</Text>
+                }
+              />
+            </Card>
+          )}
+        </View>
+      </View>
       
       <View style={styles.formGroup}>
         <Text style={styles.label}>Description</Text>
@@ -121,27 +148,6 @@ const ProductForm = ({ product, onSave, onCancel }) => {
           onChangeText={setPrice}
           placeholder="0.00"
           keyboardType="decimal-pad"
-        />
-      </View>
-      
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Stock Quantity</Text>
-        <TextInput
-          style={styles.input}
-          value={stockQuantity}
-          onChangeText={setStockQuantity}
-          placeholder="0"
-          keyboardType="number-pad"
-        />
-      </View>
-      
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Category</Text>
-        <TextInput
-          style={styles.input}
-          value={category}
-          onChangeText={setCategory}
-          placeholder="Product category"
         />
       </View>
       
@@ -205,6 +211,38 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30,
   },
+  dropdownContainer: {
+    position: 'relative',
+    zIndex: 1,
+  },
+  dropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    maxHeight: 200,
+    zIndex: 10,
+  },
+  dropdownItem: {
+    padding: spacing.small,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  dropdownItemText: {
+    fontSize: fonts.size.medium,
+    color: colors.text,
+  },
+  dropdownItemSubtext: {
+    fontSize: fonts.size.small,
+    color: colors.textSecondary,
+    marginTop: spacing.tiny,
+  },
+  emptyListText: {
+    padding: spacing.medium,
+    textAlign: 'center',
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+  },
   button: {
     flex: 1,
     padding: 12,
@@ -229,4 +267,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProductForm;
+const enhancedComponent = withObservables([], () => ({
+  factories: database.collections.get('factories').query().observe(),
+}));
+
+export default withDatabase(enhancedComponent(ProductForm));

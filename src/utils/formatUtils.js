@@ -3,7 +3,7 @@
  */
 
 // Format currency amount (e.g., "$1,234.56")
-export const formatCurrency = (amount, currencyCode = 'USD') => {
+export const formatCurrency = (amount, currencyCode = 'INR') => {
   if (amount === undefined || amount === null || isNaN(amount)) return '';
   
   return new Intl.NumberFormat('en-US', {
@@ -42,7 +42,7 @@ export const formatPercentage = (value, decimals = 2) => {
   }).format(value / 100);
 };
 
-// Format phone number (e.g., "(123) 456-7890")
+// Format phone number (e.g., "123-456-7890")
 export const formatPhoneNumber = (phoneNumber) => {
   if (!phoneNumber) return '';
   
@@ -51,7 +51,7 @@ export const formatPhoneNumber = (phoneNumber) => {
   
   // Format according to length
   if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
   } else if (cleaned.length === 11 && cleaned.startsWith('1')) {
     return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7, 11)}`;
   }

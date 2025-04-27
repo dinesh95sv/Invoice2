@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { Q } from '@nozbe/watermelondb';
+// import { Q } from '@nozbe/watermelondb';
 
 import { database } from '../../database';
 import Product from '../../database/models/Product';
@@ -128,7 +128,7 @@ const ProductListScreen = () => {
               </View>
               <View style={styles.productPrice}>
                 <Text style={styles.priceText}>{formatCurrency(item.price)}</Text>
-                <Text style={styles.stockText}>Stock: {item.stock}</Text>
+                {/* <Text style={styles.stockText}>Stock: {item.stock}</Text> */}
               </View>
             </View>
           </Card>

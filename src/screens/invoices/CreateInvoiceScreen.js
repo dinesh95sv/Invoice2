@@ -1,3 +1,5 @@
+import { previewInvoicePDF } from "../../services/pdfService";
+
 // src/screens/invoices/CreateInvoiceScreen.js (continuation)
 const CreateInvoiceScreen = ({ route, navigation }) => {
   const editingInvoice = route.params?.invoice;
@@ -5,6 +7,8 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
   
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [customer, setCustomer] = useState(null);
+  const [factory, setFactory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -86,10 +90,14 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
       
       // Get customer
       const customer = await editingInvoice.customer.fetch();
+      setCustomer(customer);
+      const factory = await editingInvoice.factory.fetch();
+      setFactory(factory);
       
       // Update form data
       setFormData({
         customerId: customer.id,
+        factoryId: factory.id,
         invoiceNumber: editingInvoice.invoiceNumber,
         date: new Date(editingInvoice.date),
         dueDate: editingInvoice.dueDate ? new Date(editingInvoice.dueDate) : null,
@@ -104,21 +112,28 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
   };
 
   const generateInvoiceNumber = async () => {
+    
+    const dateInfo = formData.date;
+    const factoryCode = factory.code || 'ADH';
+    const year = dateInfo.getFullYear().padStart(4, '0');
+    const month = dateInfo.getMonth() + 1;
+    const monthPadded = month.padStart(2, '0')
+    const date = dateInfo.getDate().padStart(2, '0');
     try {
       // Get the latest invoice to generate a new invoice number
+      
       const invoicesCollection = database.get('invoices');
       const latestInvoices = await invoicesCollection
-        .query(Q.sortBy('created_at', Q.desc))
+        .query(Q.where('invoiceNumber', Q.like(`INV-${factoryCode}${year}${monthPadded}%`)),Q.sortBy('created_at', Q.desc))
         .fetch();
-        
       if (latestInvoices.length > 0) {
         const lastInvoiceNumber = latestInvoices[0].invoiceNumber;
         // Extract numeric part and increment
-        const numericPart = parseInt(lastInvoiceNumber.replace(/^\D+/g, ''), 10);
-        return `INV-${String(numericPart + 1).padStart(5, '0')}`;
+        const invoiceNumPart = parseInt(lastInvoiceNumber.substr(lastInvoiceNumber.length - 3), 10)
+        return `INV-${factoryCode}${year}${monthPadded}${date}${(invoiceNumPart + 1 ).padStart(3, '0')}`;
       } else {
         // First invoice
-        return 'INV-00001';
+        return `INV-${factoryCode}${year}${monthPadded}${date}001`;
       }
     } catch (error) {
       console.error('Error generating invoice number:', error);
@@ -212,6 +227,11 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
               invoice.customer.set(formData.customerId);
             });
           }
+          if (editingInvoice.factory.id !== formData.factoryId) {
+            await editingInvoice.update((invoice) => {
+              invoice.factory.set(formData.factoryId);
+            });
+          }
           
           // Fetch existing items to compare with new items
           const existingItems = await editingInvoice.items.fetch();
@@ -252,6 +272,7 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
           const invoicesCollection = database.get('invoices');
           const newInvoice = await invoicesCollection.create((invoice) => {
             invoice.customer.set(formData.customerId);
+            invoice.factory.set(formData.factoryId);
             invoice.invoiceNumber = formData.invoiceNumber;
             invoice.date = formData.date.toISOString();
             invoice.dueDate = formData.dueDate ? formData.dueDate.toISOString() : null;
@@ -302,9 +323,7 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
       <View style={styles.formContainer}>
         <InvoiceForm
           formData={formData}
-          onChange={handleFormChange}
-          customers={customers}
-          products={products}
+          onValueChange={handleFormChange}
           onAddItem={handleAddItem}
           onUpdateItem={handleUpdateItem}
           onRemoveItem={handleRemoveItem}
@@ -315,7 +334,7 @@ const CreateInvoiceScreen = ({ route, navigation }) => {
           <Text style={styles.totalLabel}>Total Amount:</Text>
           <Text style={styles.totalAmount}>{formatCurrency(totalAmount)}</Text>
         </View>
-        
+
         <Button
           title={isEditing ? 'Update Invoice' : 'Create Invoice'}
           onPress={handleSubmit}

@@ -18,6 +18,7 @@ const AddProductScreen = () => {
     description: '',
     price: '',
     stock: '',
+    factory: '',
     sku: '',
   };
 
@@ -31,7 +32,7 @@ const AddProductScreen = () => {
           product.name = formData.name;
           product.description = formData.description || '';
           product.price = parseFloat(formData.price) || 0;
-          product.stock = parseInt(formData.stock, 10) || 0;
+          product.factoryId = formData.factoryId,
           product.sku = formData.sku || '';
         });
       });

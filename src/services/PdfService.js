@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system';
  * @param {Array} items - Array of invoice items with product details
  * @returns {String} HTML content for PDF
  */
-export const generateInvoiceHTML = (invoice, customer, items) => {
+export const generateInvoiceHTML = (invoice, factory, customer, items) => {
   const currentDate = new Date(invoice.date).toLocaleDateString();
   const dueDate = invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : 'N/A';
   
@@ -103,11 +103,11 @@ export const generateInvoiceHTML = (invoice, customer, items) => {
         <div class="invoice-header">
           <div>
             <div class="invoice-title">INVOICE</div>
-            <div>Your Company Name</div>
-            <div>123 Business Street</div>
-            <div>City, State ZIP</div>
-            <div>Phone: (123) 456-7890</div>
-            <div>Email: contact@yourcompany.com</div>
+            <div>${factory.name}</div>
+            <div>${factory.gstin}</div>
+            <div>${factory.address}</div>
+            <div>Phone: ${factory.phone}</div>
+            <div>Email: ${factory.email}</div>
           </div>
           <div class="company-details">
             <div style="font-size: 18px; font-weight: bold;">Invoice #${invoice.invoiceNumber}</div>
@@ -199,9 +199,9 @@ const calculateGrandTotal = (invoice) => {
 /**
  * Generate PDF from invoice data and share it
  */
-export const generateAndShareInvoicePDF = async (invoice, customer, items) => {
+export const generateAndShareInvoicePDF = async (invoice, factory, customer, items) => {
   try {
-    const htmlContent = generateInvoiceHTML(invoice, customer, items);
+    const htmlContent = generateInvoiceHTML(invoice, factory, customer, items);
     
     // Create PDF
     const { uri } = await Print.printToFileAsync({
@@ -236,9 +236,9 @@ export const generateAndShareInvoicePDF = async (invoice, customer, items) => {
 /**
  * Preview PDF for invoice
  */
-export const previewInvoicePDF = async (invoice, customer, items) => {
+export const previewInvoicePDF = async (invoice, factory, customer, items) => {
   try {
-    const htmlContent = generateInvoiceHTML(invoice, customer, items);
+    const htmlContent = generateInvoiceHTML(invoice, factory, customer, items);
     await Print.printAsync({
       html: htmlContent
     });

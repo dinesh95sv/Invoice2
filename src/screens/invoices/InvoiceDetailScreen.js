@@ -14,6 +14,7 @@ const InvoiceDetailScreen = ({ route, navigation }) => {
   const { invoiceId } = route.params;
   const [invoice, setInvoice] = useState(null);
   const [customer, setCustomer] = useState(null);
+  const [factory, setFactory] = useState(null);
   const [invoiceItems, setInvoiceItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState(false);
@@ -34,6 +35,9 @@ const InvoiceDetailScreen = ({ route, navigation }) => {
       // Fetch customer information
       const customerRecord = await invoiceRecord.customer.fetch();
       setCustomer(customerRecord);
+      // Fetch factory information
+      const factoryRecord = await invoiceRecord.factory.fetch();
+      setFactory(factoryRecord);
       
       // Fetch invoice items
       const items = await invoiceRecord.items.fetch();
@@ -111,6 +115,7 @@ const InvoiceDetailScreen = ({ route, navigation }) => {
       
       await generateAndShareInvoicePDF({
         invoice,
+        factory,
         customer,
         items: invoiceItems,
       });
@@ -135,7 +140,7 @@ const InvoiceDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  if (loading || !invoice || !customer) {
+  if (loading || !invoice || !customer || !factory) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -165,10 +170,26 @@ const InvoiceDetailScreen = ({ route, navigation }) => {
       </Card>
 
       <Card style={styles.detailsCard}>
+        <Text style={styles.sectionTitle}>Factory</Text>
+        <Text style={styles.customerName}>{factory.name}</Text>
+        <Text style={styles.customerDetail}>{factory.gstin}</Text>
+        <Text style={styles.customerDetail}>{factory.phone}</Text>
+        {factory.email && (
+        <Text style={styles.customerDetail}>{factory.email}</Text>
+        )}
+        {factory.address && (
+          <Text style={styles.customerDetail}>{factory.address}</Text>
+        )}
+      </Card>
+
+      <Card style={styles.detailsCard}>
         <Text style={styles.sectionTitle}>Customer</Text>
         <Text style={styles.customerName}>{customer.name}</Text>
-        <Text style={styles.customerDetail}>{customer.email}</Text>
+        <Text style={styles.customerDetail}>{customer.gstin}</Text>
         <Text style={styles.customerDetail}>{customer.phone}</Text>
+        {customer.email && (
+        <Text style={styles.customerDetail}>{customer.email}</Text>
+        )}
         {customer.address && (
           <Text style={styles.customerDetail}>{customer.address}</Text>
         )}

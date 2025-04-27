@@ -14,8 +14,7 @@
     "@react-navigation/bottom-tabs": "^6.5.8",
     "@react-navigation/native": "^6.1.7",
     "@react-navigation/native-stack": "^6.9.13",
-    "@watermelondb/core": "^0.26.0",
-    "@watermelondb/decorators": "^0.26.0",
+    "@nozbe/watermelondb": "^0.26.0",
     "expo": "~48.0.18",
     "expo-file-system": "~15.2.2",
     "expo-print": "~12.2.1",
@@ -29,10 +28,7 @@
     "react-native-reanimated": "~2.14.4",
     "react-native-safe-area-context": "4.5.0",
     "react-native-screens": "~3.20.0",
-    "react-native-uuid": "^2.0.1",
-    "@watermelondb/plugin-adapter-react-native": "^0.26.0",
-    "@watermelondb/query": "^0.26.0",
-    "watermelondb": "^0.26.0"
+    "react-native-uuid": "^2.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

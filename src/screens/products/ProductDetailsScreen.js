@@ -4,6 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { database } from '../../database';
+import { Q } from '@nozbe/watermelondb';
 import ProductForm from '../../components/ProductForm';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -19,15 +20,17 @@ const ProductDetailScreen = () => {
   const { productId } = route.params;
   
   const [product, setProduct] = useState(null);
+  const [factory, setFactory] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
   // Fetch product data
   const fetchProduct = async () => {
     try {
-      const productsCollection = database.get('products');
-      const productRecord = await productsCollection.find(productId);
+      const productRecord = await database.get('products').find(productId);
+      const factory = await database.get('factories').query(Q.where('id', productRecord.factoryId))
       setProduct(productRecord);
+      setFactory(factory);
     } catch (error) {
       console.error('Error fetching product:', error);
       Alert.alert('Error', 'Failed to load product details');
@@ -50,7 +53,7 @@ const ProductDetailScreen = () => {
           p.name = updatedData.name;
           p.description = updatedData.description;
           p.price = parseFloat(updatedData.price) || 0;
-          p.stock = parseInt(updatedData.stock, 10) || 0;
+          p.factoryId = updatedData.factoryId;
           p.sku = updatedData.sku;
         });
       });
@@ -120,12 +123,11 @@ const ProductDetailScreen = () => {
               name: product.name,
               description: product.description,
               price: product.price.toString(),
-              stock: product.stock.toString(),
               sku: product.sku,
+              factoryId: product.factoryId
             }}
-            onSubmit={handleUpdateProduct}
+            onSave={handleUpdateProduct}
             onCancel={handleCancel}
-            isEditing={true}
           />
         </Card>
       </ScrollView>
@@ -145,21 +147,19 @@ const ProductDetailScreen = () => {
         
         <View style={styles.priceContainer}>
           <Text style={styles.price}>{formatCurrency(product.price)}</Text>
-          <View style={styles.stockContainer}>
-            <Text style={styles.stockLabel}>In Stock:</Text>
-            <Text style={[
-              styles.stockValue,
-              product.stock > 0 ? styles.inStock : styles.outOfStock
-            ]}>
-              {product.stock}
-            </Text>
-          </View>
         </View>
         
         {product.sku ? (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>SKU:</Text>
             <Text style={styles.infoValue}>{product.sku}</Text>
+          </View>
+        ) : null}
+
+        {factory ? (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Factory:</Text>
+            <Text style={styles.infoValue}>{factory.name}</Text>
           </View>
         ) : null}
         

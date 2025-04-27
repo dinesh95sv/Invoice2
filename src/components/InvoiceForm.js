@@ -13,20 +13,23 @@ import { formatDate } from '../utils/dateUtils';
 import { formatCurrency } from '../utils/formatUtils';
 
 const InvoiceForm = ({ 
-  values, 
+  formData, 
   onValueChange, 
   onAddItem, 
   onRemoveItem, 
   onUpdateItem, 
   customers, 
+  factories,
   products,
   selectedCustomer
 }) => {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [showFactoryDropdown, setShowFactoryDropdown] = useState(false);
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState('1');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [factorySearch, setFactorySearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
 
   useEffect(() => {
@@ -39,6 +42,10 @@ const InvoiceForm = ({
     customer.name.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
+  const filteredFactories = factories.filter(factory => 
+    factory.name.toLowerCase().includes(factorySearch.toLowerCase())
+  );
+
   const filteredProducts = products.filter(product => 
     product.name.toLowerCase().includes(productSearch.toLowerCase())
   );
@@ -48,6 +55,12 @@ const InvoiceForm = ({
     setShowCustomerDropdown(false);
     setCustomerSearch('');
   };
+
+  const handleSelectFactory = (factory) => {
+    onValueChange('factoryId', factory.id);
+    setShowFactoryDropdown(false);
+    setFactorySearch('');
+  }
 
   const handleSelectProduct = (product) => {
     setSelectedProduct(product);
@@ -86,7 +99,17 @@ const InvoiceForm = ({
       onPress={() => handleSelectCustomer(item)}
     >
       <Text style={styles.dropdownItemText}>{item.name}</Text>
-      {item.email && <Text style={styles.dropdownItemSubtext}>{item.email}</Text>}
+      {item.gstin && <Text style={styles.dropdownItemSubtext}>{item.gstin}</Text>}
+    </TouchableOpacity>
+  );
+
+  const renderFactoryItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.dropdownItem} 
+      onPress={() => handleSelectFactory(item)}
+    >
+      <Text style={styles.dropdownItemText}>{item.name}</Text>
+      {item.gstin && <Text style={styles.dropdownItemSubtext}>{item.gstin}</Text>}
     </TouchableOpacity>
   );
 
@@ -97,7 +120,7 @@ const InvoiceForm = ({
     >
       <Text style={styles.dropdownItemText}>{item.name}</Text>
       <Text style={styles.dropdownItemSubtext}>
-        {formatCurrency(item.price)} • {item.stockQuantity || 0} in stock
+        {formatCurrency(item.price)}
       </Text>
     </TouchableOpacity>
   );
@@ -119,14 +142,41 @@ const InvoiceForm = ({
     </View>
   );
 
+  const getCurrentFactory = () => {
+    if (formData.factoryId) {
+      return factories.find(f => f.id === formData.factoryId);
+    }
+    return null;
+  };
+
   const getCurrentCustomer = () => {
-    if (values.customerId) {
-      return customers.find(c => c.id === values.customerId);
+    if (formData.customerId) {
+      return customers.find(c => c.id === formData.customerId);
     }
     return null;
   };
 
   const customer = getCurrentCustomer();
+  const factory = getCurrentFactory();
+
+  const handlePreviewInvoice = async () => {
+      try {
+        setGeneratingPdf(true);
+        
+        await previewInvoicePDF({
+          formData,
+          factory,
+          customer,
+          items: formData.items,
+        });
+      } catch (error) {
+        console.error('Error sharing invoice:', error);
+        Alert.alert('Error', 'Could not share invoice');
+      } finally {
+        setGeneratingPdf(false);
+      }
+    };
+
 
   return (
     <View style={styles.container}>
@@ -135,24 +185,66 @@ const InvoiceForm = ({
         
         <Input
           label="Invoice Number"
-          value={values.invoiceNumber}
+          value={formData.invoiceNumber}
           onChangeText={(text) => onValueChange('invoiceNumber', text)}
           placeholder="Enter invoice number"
         />
         
         <Input
           label="Date"
-          value={values.date}
+          value={formData.date}
           onChangeText={(text) => onValueChange('date', text)}
           placeholder="YYYY-MM-DD"
         />
         
         <Input
           label="Due Date"
-          value={values.dueDate}
+          value={formData.dueDate}
           onChangeText={(text) => onValueChange('dueDate', text)}
           placeholder="YYYY-MM-DD"
         />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Factory Information</Text>
+        
+        <View style={styles.dropdownContainer}>
+          <Input
+            label="Factory"
+            value={factory ? factory.name : ''}
+            onChangeText={setFactorySearch}
+            placeholder="Search Factories"
+            onFocus={() => setShowFactoryDropdown(true)}
+            editable={!selectedFactory}
+          />
+          
+          {showFactoryDropdown && (
+            <Card style={styles.dropdown}>
+              <FlatList
+                data={filteredFactories}
+                renderItem={renderFactoryItem}
+                keyExtractor={item => item.id}
+                ListEmptyComponent={
+                  <Text style={styles.emptyListText}>No Factories found</Text>
+                }
+              />
+            </Card>
+          )}
+        </View>
+        
+        {factory && (
+          <Card style={styles.customerCard}>
+            <Text style={styles.customerName}>{factory.name}</Text>
+            <Text style={styles.customerDetail}>{factory.gstin}</Text>
+            {factory.email && <Text style={styles.customerDetail}>{factory.email}</Text>}
+            {factory.phone && <Text style={styles.customerDetail}>{factory.phone}</Text>}
+            {factory.address && (
+              <Text style={styles.customerDetail}>
+                {factory.address}
+              </Text>
+            )}
+          </Card>
+        )}
       </View>
       
       <View style={styles.section}>
@@ -185,14 +277,12 @@ const InvoiceForm = ({
         {customer && (
           <Card style={styles.customerCard}>
             <Text style={styles.customerName}>{customer.name}</Text>
+            <Text style={styles.customerDetail}>{customer.gstin}</Text>
             {customer.email && <Text style={styles.customerDetail}>{customer.email}</Text>}
             {customer.phone && <Text style={styles.customerDetail}>{customer.phone}</Text>}
             {customer.address && (
               <Text style={styles.customerDetail}>
                 {customer.address}
-                {customer.city && `, ${customer.city}`}
-                {customer.zipCode && ` ${customer.zipCode}`}
-                {customer.country && `, ${customer.country}`}
               </Text>
             )}
           </Card>
@@ -248,9 +338,9 @@ const InvoiceForm = ({
         </View>
         
         <View style={styles.itemsList}>
-          {values.items.length > 0 ? (
+          {formData.items.length > 0 ? (
             <FlatList
-              data={values.items}
+              data={formData.items}
               renderItem={renderInvoiceItem}
               keyExtractor={(item, index) => index.toString()}
             />
@@ -262,7 +352,7 @@ const InvoiceForm = ({
         <View style={styles.totalSection}>
           <Text style={styles.totalLabel}>Total Amount:</Text>
           <Text style={styles.totalValue}>
-            {formatCurrency(values.items.reduce((sum, item) => sum + item.total, 0))}
+            {formatCurrency(formData.items.reduce((sum, item) => sum + item.total, 0))}
           </Text>
         </View>
       </View>
@@ -272,7 +362,7 @@ const InvoiceForm = ({
         
         <Input
           label="Notes"
-          value={values.notes}
+          value={formData.notes}
           onChangeText={(text) => onValueChange('notes', text)}
           placeholder="Add any notes or payment instructions"
           multiline
@@ -281,11 +371,19 @@ const InvoiceForm = ({
         
         <Input
           label="Terms and Conditions"
-          value={values.terms}
+          value={formData.terms}
           onChangeText={(text) => onValueChange('terms', text)}
           placeholder="Terms and conditions for this invoice"
           multiline
           numberOfLines={4}
+        />
+      </View>
+      <View style={styles.buttonsSection}>
+        <Button
+          title="Preview Invoice"
+          onPress={handlePreviewInvoice}
+          loading={generatingPdf}
+          style={styles.actionButton}
         />
       </View>
     </View>
@@ -427,6 +525,7 @@ const styles = StyleSheet.create({
 // Enhance the component with WatermelonDB observations
 const enhancedComponent = withObservables([], () => ({
   customers: database.collections.get('customers').query().observe(),
+  factories: database.collections.get('factories').query().observe(),
   products: database.collections.get('products').query().observe(),
 }));
 
